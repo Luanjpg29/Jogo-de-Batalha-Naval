@@ -1,0 +1,132 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdbool.h>
+
+// Definindo o tamanho do tabuleiro
+#define TAMANHO 10
+
+// Estrutura para representar o tabuleiro
+typedef struct {
+    char grid[TAMANHO][TAMANHO];
+    bool revelado[TAMANHO][TAMANHO];
+} Tabuleiro;
+
+// Função para inicializar o tabuleiro
+void inicializarTabuleiro(Tabuleiro *tab) {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            tab->grid[i][j] = '~'; // Água
+            tab->revelado[i][j] = false;
+        }
+    }
+}
+
+// Função para exibir o tabuleiro (para o jogador)
+void exibirTabuleiro(Tabuleiro *tab) {
+    printf("  ");
+    for (int i = 0; i < TAMANHO; i++) {
+        printf("%d ", i);
+    }
+    printf("\n");
+    for (int i = 0; i < TAMANHO; i++) {
+        printf("%d ", i);
+        for (int j = 0; j < TAMANHO; j++) {
+            if (tab->revelado[i][j]) {
+                printf("%c ", tab->grid[i][j]);
+            } else {
+                printf("~ ");
+            }
+        }
+        printf("\n");
+    }
+}
+
+// Função para posicionar navios aleatoriamente (simplificado: apenas um navio de 3 células)
+void posicionarNavios(Tabuleiro *tab) {
+    srand(time(NULL));
+    int x, y, direcao;
+    bool valido = false;
+    while (!valido) {
+        x = rand() % TAMANHO;
+        y = rand() % TAMANHO;
+        direcao = rand() % 2; // 0: horizontal, 1: vertical
+        valido = true;
+        if (direcao == 0) { // Horizontal
+            if (y + 2 >= TAMANHO) valido = false;
+            else {
+                for (int i = 0; i < 3; i++) {
+                    if (tab->grid[x][y + i] != '~') valido = false;
+                }
+            }
+        } else { // Vertical
+            if (x + 2 >= TAMANHO) valido = false;
+            else {
+                for (int i = 0; i < 3; i++) {
+                    if (tab->grid[x + i][y] != '~') valido = false;
+                }
+            }
+        }
+    }
+    // Posicionar o navio
+    for (int i = 0; i < 3; i++) {
+        if (direcao == 0) {
+            tab->grid[x][y + i] = 'N'; // Navio
+        } else {
+            tab->grid[x + i][y] = 'N';
+        }
+    }
+}
+
+// Função para verificar se o jogo acabou
+bool jogoAcabou(Tabuleiro *tab) {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            if (tab->grid[i][j] == 'N' && !tab->revelado[i][j]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Função principal
+int main() {
+    Tabuleiro tabuleiro;
+    inicializarTabuleiro(&tabuleiro);
+    posicionarNavios(&tabuleiro);
+
+    printf("Bem-vindo ao Jogo de Batalha Naval!\n");
+    printf("Tente afundar o navio inimigo.\n");
+    printf("Digite coordenadas (linha coluna) para atirar.\n");
+
+    int tentativas = 0;
+    while (!jogoAcabou(&tabuleiro)) {
+        exibirTabuleiro(&tabuleiro);
+        int x, y;
+        printf("Digite linha e coluna (0-9): ");
+        scanf("%d %d", &x, &y);
+        if (x < 0 || x >= TAMANHO || y < 0 || y >= TAMANHO) {
+            printf("Coordenadas inválidas!\n");
+            continue;
+        }
+        if (tabuleiro.revelado[x][y]) {
+            printf("Você já atirou aí!\n");
+            continue;
+        }
+        tabuleiro.revelado[x][y] = true;
+        tentativas++;
+        if (tabuleiro.grid[x][y] == 'N') {
+            printf("Acertou! Navio atingido.\n");
+            tabuleiro.grid[x][y] = 'X'; // Acerto
+        } else {
+            printf("Errou! Água.\n");
+            tabuleiro.grid[x][y] = 'O'; // Erro
+        }
+    }
+
+    exibirTabuleiro(&tabuleiro);
+    printf("Parabéns! Você afundou o navio em %d tentativas.\n", tentativas);
+
+    return 0;
+}
